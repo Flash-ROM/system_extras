@@ -146,8 +146,8 @@ size_t EventFd::GetAvailableMmapData(char** pdata) {
     return 0;
   }
 
-  // Make sure we can see the data after the fence.
-  std::atomic_thread_fence(std::memory_order_acquire);
+  // rmb() used to ensure reading data after reading data_head.
+  __sync_synchronize();
 
   // Copy records from mapped buffer to data_process_buffer. Note that records can be wrapped
   // at the end of the mapped buffer.
@@ -174,6 +174,8 @@ size_t EventFd::GetAvailableMmapData(char** pdata) {
 }
 
 void EventFd::DiscardMmapData(size_t discard_size) {
+  // mb() used to ensure finish reading data before writing data_tail.
+  __sync_synchronize();
   mmap_metadata_page_->data_tail += discard_size;
 }
 
